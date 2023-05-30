@@ -1,9 +1,12 @@
 const express = require("express");
 const Customer = require("../models/customer");
-const validateFunction = require("../utility/ValidateFunction");
+const validateFunction = require("../utility/validateFunction");
+const { generateAuthToken } = require("../utility/authToken");
+const authHandler = require("../middleware/authHandler");
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+// getting all customer data
+router.get("/", authHandler, async (req, res) => {
   try {
     const data = await Customer.find();
     res.status(200).send(data);
@@ -12,6 +15,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+// updating customer data
 router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -35,6 +39,7 @@ router.put("/update/:id", async (req, res) => {
   }
 });
 
+// getting specific customer
 router.get("/getbyid/:n", async (req, res) => {
   try {
     const id = req.params.n;
@@ -45,11 +50,11 @@ router.get("/getbyid/:n", async (req, res) => {
   }
 });
 
+// register new customer
 router.post("/create", async (req, res) => {
   try {
     const payload = req.body;
     const { error } = validateFunction(payload);
-    console.log(error);
     if (error) {
       return res.status(400).send({ message: error.message });
     }
@@ -63,6 +68,23 @@ router.post("/create", async (req, res) => {
       .status(400)
       .send({ message: "Customer not created succssfully", error });
     // all you need is to believe in you.....
+  }
+});
+
+// authenticate the customer
+
+router.post("/login", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const data = await Customer.findOne({ email: email });
+    // console.log(data);
+    const token = generateAuthToken(data.name, data.email);
+    // console.log(token);
+    res
+      .status(200)
+      .send({ message: "Customer login successfully...", token: token });
+  } catch (error) {
+    res.status(400).send({ message: error.message });
   }
 });
 
